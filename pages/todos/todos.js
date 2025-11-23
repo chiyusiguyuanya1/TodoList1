@@ -1,137 +1,175 @@
 Page({
   data: {
-    input: '',
+    input: "",
+    categories: ["工作", "学习", "生活"],
+    selectedCategory: "工作",
     todos: [],
+    filteredTodos: [],
     leftCount: 0,
     allCompleted: false,
+    searchKey: "",
     logs: [],
-    toastHidden: true,
-  },
-  onShow: function() {
-    wx.setNavigationBarTitle({
-      title: '待办清单'
-    })
-
+    toastHidden: true
   },
 
-  save: function () {
-    wx.setStorageSync('todo_list', this.data.todos)
-    wx.setStorageSync('todo_logs', this.data.logs)
+  onLoad() {
+    this.load();
   },
 
-  load: function () {
-    var todos = wx.getStorageSync('todo_list')
-    if (todos) {
-      var leftCount = todos.filter(function (item) {
-        return !item.completed
-      }).length
-      this.setData({ todos: todos, leftCount: leftCount })
+  /* ========== 搜索功能 ========== */
+  onSearchInput(e) {
+    const key = e.detail.value.toLowerCase();
+    this.setData({ searchKey: key });
+
+    this.applyFilter();
+  },
+
+  /* 搜索过滤逻辑 */
+  applyFilter() {
+    let key = this.data.searchKey;
+    let todos = this.data.todos;
+
+    if (!key.trim()) {
+      this.setData({ filteredTodos: todos });
+      return;
     }
-    var logs = wx.getStorageSync('todo_logs')
-    if (logs) {
-      this.setData({ logs: logs })
-    }
+
+    let filtered = todos.filter(item =>
+      item.name.toLowerCase().includes(key) ||
+      item.category.toLowerCase().includes(key)
+    );
+
+    this.setData({ filteredTodos: filtered });
   },
 
-  onLoad: function () {
-    this.load()
+
+  /* 分类选择 */
+  onCategoryChange(e) {
+    this.setData({
+      selectedCategory: this.data.categories[e.detail.value]
+    });
   },
 
-  inputChangeHandle: function (e) {
-    this.setData({ input: e.detail.value })
+  /* 输入框变化 */
+  inputChangeHandle(e) {
+    this.setData({ input: e.detail.value });
   },
 
-  addTodoHandle: function (e) {
+  /* 添加任务 */
+  addTodoHandle() {
     if (!this.data.input || !this.data.input.trim()) return
-    var todos = this.data.todos
-    todos.push({ name: this.data.input, completed: false })
-    var logs = this.data.logs
-    logs.push({ timestamp: new Date(), action: 'Add', name: this.data.input })
+
+    const newTodo = {
+      name: this.data.input,
+      completed: false,
+      category: this.data.selectedCategory
+    };
+
+    let todos = this.data.todos;
+    todos.push(newTodo);
+
+    let logs = this.data.logs;
+    logs.push({
+      timestamp: new Date(),
+      action: "Add",
+      name: this.data.input
+    });
+
     this.setData({
-      input: '',
-      todos: todos,
+      input: "",
+      todos,
       leftCount: this.data.leftCount + 1,
-      logs: logs
-    })
-    this.save()
+      logs
+    });
+
+    this.save();
+    this.applyFilter();
   },
 
-  toggleTodoHandle: function (e) {
-    var index = e.currentTarget.dataset.index
-    var todos = this.data.todos
-    todos[index].completed = !todos[index].completed
-    var logs = this.data.logs
-    logs.push({
-      timestamp: new Date(),
-      action: todos[index].completed ? 'Finish' : 'Restart',
-      name: todos[index].name
-    })
-    this.setData({
-      todos: todos,
-      leftCount: this.data.leftCount + (todos[index].completed ? -1 : 1),
-      logs: logs
-    })
-    this.save()
+  /* 切换任务状态 */
+  toggleTodoHandle(e) {
+    let index = e.currentTarget.dataset.index;
 
+    // filteredTodos 索引 → 原 todos 索引
+    let realTask = this.data.filteredTodos[index];
+    let realIndex = this.data.todos.findIndex(t => t === realTask);
+
+    let todos = this.data.todos;
+    todos[realIndex].completed = !todos[realIndex].completed;
+
+    this.setData({
+      todos,
+      leftCount: todos.filter(t => !t.completed).length
+    });
+
+    this.save();
+    this.applyFilter();
   },
 
-  removeTodoHandle: function (e) {
-    var index = e.currentTarget.dataset.index
-    var todos = this.data.todos
-    var remove = todos.splice(index, 1)[0]
-    var logs = this.data.logs
-    logs.push({ timestamp: new Date(), action: 'Remove', name: remove.name })
+  /* 删除任务 */
+  removeTodoHandle(e) {
+    let index = e.currentTarget.dataset.index;
+    let realTask = this.data.filteredTodos[index];
+
+    let todos = this.data.todos.filter(t => t !== realTask);
+
     this.setData({
-      todos: todos,
-      leftCount: this.data.leftCount - (remove.completed ? 0 : 1),
-      logs: logs
-    })
-    this.save()
+      todos,
+      leftCount: todos.filter(t => !t.completed).length
+    });
+
+    this.save();
+    this.applyFilter();
   },
 
-  toggleAllHandle: function (e) {
-    this.data.allCompleted = !this.data.allCompleted
-    var todos = this.data.todos
-    for (var i = todos.length - 1; i >= 0; i--) {
-      todos[i].completed = this.data.allCompleted
-    }
-    var logs = this.data.logs
-    logs.push({
-      timestamp: new Date(),
-      action: this.data.allCompleted ? 'Finish' : 'Restart',
-      name: 'All todos'
-    })
+  /* 全选 */
+  toggleAllHandle() {
+    this.data.allCompleted = !this.data.allCompleted;
+
+    let todos = this.data.todos;
+    todos.forEach(item => (item.completed = this.data.allCompleted));
+
     this.setData({
-      todos: todos,
-      leftCount: this.data.allCompleted ? 0 : todos.length,
-      logs: logs
-    })
-    this.save()
-    wx.vibrateShort()
+      todos,
+      leftCount: this.data.allCompleted ? 0 : todos.length
+    });
+
+    this.save();
+    this.applyFilter();
   },
-  
-  clearCompletedHandle: function (e) {
-    var todos = this.data.todos
-    var remains = []
-    for (var i = 0; i < todos.length; i++) {
-      todos[i].completed || remains.push(todos[i])
-    }
-    var logs = this.data.logs
-    logs.push({
-      timestamp: new Date(),
-      action: 'Clear',
-      name: 'Completed todo'
-    })
-    this.setData({ todos: remains, logs: logs })
-    this.save()
+
+  /* 清除已完成 */
+  clearCompletedHandle() {
+    let remains = this.data.todos.filter(item => !item.completed);
     this.setData({
+      todos: remains,
+      leftCount: remains.length,
       toastHidden: false
-    })
-  wx.vibrateShort()
+    });
+
+    this.save();
+    this.applyFilter();
+
+    wx.vibrateShort();
   },
-  hideToast: function() {
+
+  hideToast() {
+    this.setData({ toastHidden: true });
+  },
+
+  /* 数据存储 */
+  save() {
+    wx.setStorageSync("todo_list", this.data.todos);
+  },
+
+  load() {
+    let todos = wx.getStorageSync("todo_list") || [];
+    let leftCount = todos.filter(item => !item.completed).length;
+
     this.setData({
-      toastHidden: true
-    })
-  },
-})
+      todos,
+      filteredTodos: todos,
+      leftCount
+    });
+  }
+});
