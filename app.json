@@ -1,24 +1,52 @@
 {
+  "useExtendedLib": {
+  "weui": true
+},
+	"lazyCodeLoading": "requiredComponents",
   "pages": [
-    "pages/index/index"
+    "pages/index/index",
+    "pages/logs/logs",
+    "pages/todos/todos"
   ],
+  "navigateToMiniProgramAppIdList": [
+    "wxe333b834a643f99d",
+    "wx8abaf00ee8c3202e"
+  ],    
+  "requiredBackgroundModes": ["audio","location"],
+
   "window": {
-    "navigationBarTextStyle": "black",
-    "navigationStyle": "custom"
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#EDEDED",
+    "navigationBarTitleText": "",
+    "navigationBarTextStyle": "black"
+   }, 
+  "tabBar": {
+    "color": "#cdcdcd",
+    "selectedColor": "#000000",
+    "borderStyle": "black",
+    "backgroundColor": "#f7f7f7",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "iconPath": "image/yu.png",
+        "selectedIconPath": "image/yu2.png",
+        "text": "专注"
+      },
+
+      {
+        "pagePath": "pages/todos/todos",
+        "iconPath": "image/todo2.png",
+        "selectedIconPath": "image/todo.png",
+        "text": "待办"
+      },      
+      {
+        "pagePath": "pages/logs/logs",
+        "iconPath": "image/jilu.png",
+        "selectedIconPath": "image/jilu2.png",
+        "text": "记录"
+      }
+    ]
   },
-  "style": "v2",
-  "renderer": "skyline",
-  "rendererOptions": {
-    "skyline": {
-      "defaultDisplayBlock": true,
-      "defaultContentBox": true,
-      "tagNameStyleIsolation": "legacy",
-      "disableABTest": true,
-      "sdkVersionBegin": "3.0.0",
-      "sdkVersionEnd": "15.255.255"
-    }
-  },
-  "componentFramework": "glass-easel",
-  "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents"
+  "sitemapLocation": "sitemap.json"
+ 
 }
